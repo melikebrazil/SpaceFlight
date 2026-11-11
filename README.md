@@ -1,23 +1,25 @@
-# SpaceFlight / Rhythm
+# SpaceFlight / Rhythm Run
 
-A minimal browser rhythm game built with HTML, CSS, and JavaScript.
+A mouse-steered spaceship rhythm game built with HTML, CSS, Canvas, and JavaScript.
 
 ## Play locally
-1. Download or clone this repository.
+1. Clone or download this repository.
 2. Open the folder in VS Code.
 3. Run `index.html` with a local web server, such as the Live Server extension.
 
 ## How to play
-The track alternates between two modes every 8 seconds:
-- **Four lanes:** press **D**, **F**, **J**, or **K** when a note reaches the hit line.
-- **Aim circles:** click or tap each circle when its shrinking ring reaches the target.
+- Move your mouse inside the flight window to steer your ship.
+- Line up with **cyan energy gates** as they reach your ship to ram them on the beat.
+- Avoid **red mines**. Hitting a mine damages your hull and breaks your combo.
+- Build combos to increase your score.
+- The track runs for 64 beats at 120 BPM, with a short countdown.
 
-The game uses an original synthesized beat, so no music file is required. It runs for one 32-second track at 120 BPM.
+The soundtrack is synthesized with the Web Audio API, so no external music file is required.
 
 ## Files
 - `index.html` — game layout and screens
-- `style.css` — minimal responsive styling
-- `game.js` — rhythm chart, timing, input, scoring, visuals, and generated audio
+- `style.css` — neon spaceflight styling and responsive layout
+- `game.js` — flight controls, rhythm chart, collisions, scoring, visuals, and generated audio
 
 ## Deploy with GitHub Pages
 In the repository, open **Settings → Pages**, select **Deploy from a branch**, choose `main` and `/(root)`, then save. New commits to `main` publish automatically.
