@@ -103,7 +103,7 @@ document.querySelector('#start-button').addEventListener('click',begin);
 document.querySelector('#restart-button').addEventListener('click',begin);
 
 function currentMode(){
- const beat=Math.max(0,Math.floor(elapsed/BEAT));
+ const beat=Math.max(0,Math.floor((elapsed-COUNT_IN)/BEAT));
  return Math.floor(beat/16)%2===0?'LANES':'AIM';
 }
 function updateHud(){
@@ -226,8 +226,9 @@ function finish(){
 function frame(now){
  requestAnimationFrame(frame);
  if(!running){render();return;}
- elapsed=(now-startedAt)/1000-COUNT_IN;
- const beat=Math.floor(elapsed/BEAT);
+ elapsed=(now-startedAt)/1000;
+ const songTime=elapsed-COUNT_IN;
+ const beat=Math.floor(songTime/BEAT);
  if(beat>lastBeat&&elapsed>=0){
   for(let b=Math.max(0,lastBeat+1);b<=Math.min(beat,TOTAL_BEATS-1);b++)beatSound(b);
   lastBeat=beat;
@@ -235,12 +236,12 @@ function frame(now){
  const mode=currentMode();
  modeLabel.textContent=mode==='LANES'?'MODE 01 / FOUR LANES':'MODE 02 / AIM CIRCLES';
  hintEl.textContent=mode==='LANES'?'PRESS D   F   J   K':'CLICK OR TAP THE CIRCLES';
- timeLabel.textContent='00:'+String(Math.max(0,Math.floor(elapsed))).padStart(2,'0');
- progressEl.style.width=(Math.max(0,Math.min(1,elapsed/(TOTAL_BEATS*BEAT)))*100)+'%';
+ timeLabel.textContent='00:'+String(Math.max(0,Math.floor(songTime))).padStart(2,'0');
+ progressEl.style.width=(Math.max(0,Math.min(1,songTime/(TOTAL_BEATS*BEAT)))*100)+'%';
  for(const note of notes){if(!note.judged&&elapsed>note.time+HIT_WINDOW)miss(note);}
  if(performance.now()>feedbackUntil)feedbackEl.textContent='';
  render();
- if(elapsed>TOTAL_BEATS*BEAT+1)finish();
+ if(elapsed>COUNT_IN+TOTAL_BEATS*BEAT+1)finish();
 }
 requestAnimationFrame(frame);
 window.addEventListener('blur',()=>{if(running)hintEl.textContent='KEEP THIS TAB ACTIVE';});
