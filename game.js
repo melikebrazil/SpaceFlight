@@ -13,7 +13,7 @@ scene.fog = new THREE.FogExp2(0x07101f, 0.0028);
 
 const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 900);
 camera.position.set(0, 5.5, 11);
-camera.lookAt(0, -2, -35);
+camera.lookAt(0, -3.5, -45);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
@@ -93,7 +93,7 @@ scene.add(stars);
 const TERRAIN_WIDTH = 260;
 const TERRAIN_LENGTH = 180;
 const TERRAIN_SEGMENTS = 72;
-const TERRAIN_BASE = -7.5;
+const TERRAIN_BASE = -2.5;
 
 function terrainHeight(x, z) {
   const broad = Math.sin(x * 0.025 + z * 0.009) * 3.1;
@@ -248,7 +248,7 @@ function animate() {
 
     camera.position.x += (ship.position.x * 0.2 - camera.position.x) * tiltEase;
     camera.position.y += (5.5 + ship.position.y * 0.12 - camera.position.y) * tiltEase;
-    camera.lookAt(ship.position.x * 0.22, -2 + ship.position.y * 0.12, -35);
+    camera.lookAt(ship.position.x * 0.22, -3.5 + ship.position.y * 0.12, -45);
 
     // Move each terrain section toward the camera, then recycle it far ahead.
     const terrainSpeed = speed * dt * 0.72;
