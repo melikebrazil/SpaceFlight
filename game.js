@@ -105,12 +105,8 @@ function terrainHeight(x, z) {
   return TERRAIN_BASE + broad + rolling + ridge + detail + valley;
 }
 
-function makeTerrainChunk(centerZ) {
-  const geometry = new THREE.PlaneGeometry(
-    TERRAIN_WIDTH, TERRAIN_LENGTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS
-  );
-  geometry.rotateX(-Math.PI / 2);
-
+function updateTerrainGeometry(terrain, centerZ) {
+  const geometry = terrain.geometry;
   const positions = geometry.attributes.position;
   const colors = [];
   const color = new THREE.Color();
@@ -118,21 +114,24 @@ function makeTerrainChunk(centerZ) {
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
     const localZ = positions.getZ(i);
-    const worldZ = centerZ + localZ;
-    const height = terrainHeight(x, worldZ);
+    const height = terrainHeight(x, centerZ + localZ);
     positions.setY(i, height - TERRAIN_BASE);
 
     const shade = THREE.MathUtils.clamp((height + 13) / 20, 0, 1);
-    color.setRGB(
-      0.19 + shade * 0.18,
-      0.22 + shade * 0.12,
-      0.29 + shade * 0.08
-    );
+    color.setRGB(0.19 + shade * 0.18, 0.22 + shade * 0.12, 0.29 + shade * 0.08);
     colors.push(color.r, color.g, color.b);
   }
 
+  positions.needsUpdate = true;
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
+}
+
+function makeTerrainChunk(centerZ) {
+  const geometry = new THREE.PlaneGeometry(
+    TERRAIN_WIDTH, TERRAIN_LENGTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS
+  );
+  geometry.rotateX(-Math.PI / 2);
 
   const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
@@ -144,6 +143,7 @@ function makeTerrainChunk(centerZ) {
   const terrain = new THREE.Mesh(geometry, material);
   terrain.position.set(0, TERRAIN_BASE, centerZ);
   terrain.frustumCulled = false;
+  updateTerrainGeometry(terrain, centerZ);
   scene.add(terrain);
   return terrain;
 }
@@ -255,7 +255,8 @@ function animate() {
     for (const chunk of terrainChunks) {
       chunk.position.z += terrainSpeed;
       if (chunk.position.z > 80) {
-        chunk.position.z -= TERRAIN_LENGTH * terrainChunks.length;
+        chunk.position.z -= TERRAIN_LENGTH * (terrainChunks.length + 1);
+        updateTerrainGeometry(chunk, chunk.position.z);
       }
     }
   }
