@@ -1,291 +1,246 @@
-import * as THREE from 'three';
+const canvas=document.querySelector('#game-canvas');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.querySelector('#score');
+const comboEl=document.querySelector('#combo');
+const accuracyEl=document.querySelector('#accuracy');
+const modeLabel=document.querySelector('#mode-label');
+const timeLabel=document.querySelector('#time-label');
+const progressEl=document.querySelector('#progress');
+const feedbackEl=document.querySelector('#feedback');
+const hintEl=document.querySelector('#bottom-hint');
+const startScreen=document.querySelector('#start-screen');
+const resultsScreen=document.querySelector('#results-screen');
 
-const mount = document.querySelector('#game');
-const speedLabel = document.querySelector('#speed');
-const distanceLabel = document.querySelector('#distance');
-const startScreen = document.querySelector('#start-screen');
-const gameOverScreen = document.querySelector('#game-over');
-const finalDistance = document.querySelector('#final-distance');
+const BPM=120;
+const BEAT=60/BPM;
+const COUNT_IN=2;
+const TOTAL_BEATS=64;
+const APPROACH=1.45;
+const HIT_WINDOW=0.17;
+const KEYS=['D','F','J','K'];
+const lanePattern=[0,1,2,3,1,0,2,3,0,2,1,3,2,1,3,0];
+let notes=[];
+let running=false;
+let startedAt=0;
+let elapsed=0;
+let score=0;
+let combo=0;
+let maxCombo=0;
+let hits=0;
+let judged=0;
+let totalError=0;
+let lastBeat=-1;
+let audio=null;
+let feedbackUntil=0;
+let lastFrame=0;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x07101f);
-scene.fog = new THREE.FogExp2(0x07101f, 0.0028);
+function resize(){
+ const rect=canvas.getBoundingClientRect();
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.max(1,Math.floor(rect.width*dpr));
+ canvas.height=Math.max(1,Math.floor(rect.height*dpr));
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+new ResizeObserver(resize).observe(canvas);
+resize();
 
-const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 900);
-camera.position.set(0, 5.5, 11);
-camera.lookAt(0, -3.5, -45);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-renderer.setSize(innerWidth, innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-mount.appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xa5dfff, 0x292039, 1.8));
-const sun = new THREE.DirectionalLight(0xffd6a0, 2.4);
-sun.position.set(-35, 65, -80);
-scene.add(sun);
-
-const fillLight = new THREE.DirectionalLight(0x45aaff, 0.8);
-fillLight.position.set(30, 12, 20);
-scene.add(fillLight);
-
-function makeShip() {
-  const ship = new THREE.Group();
-  const hullMat = new THREE.MeshStandardMaterial({ color: 0xb8d8e8, metalness: 0.82, roughness: 0.24 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x14283b, metalness: 0.75, roughness: 0.3 });
-  const glowMat = new THREE.MeshBasicMaterial({ color: 0x37dfff });
-
-  const hull = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.9, 8), hullMat);
-  hull.rotation.x = -Math.PI / 2;
-  hull.position.z = -0.25;
-  ship.add(hull);
-
-  const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(0.34, 16, 12),
-    new THREE.MeshPhysicalMaterial({ color: 0x20bce8, metalness: 0.45, roughness: 0.12, transparent: true, opacity: 0.88 })
-  );
-  cockpit.scale.set(0.8, 0.55, 1.35);
-  cockpit.position.set(0, 0.25, -0.28);
-  ship.add(cockpit);
-
-  for (const side of [-1, 1]) {
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 1.05), darkMat);
-    wing.position.set(side * 0.83, -0.08, 0.22);
-    wing.rotation.y = side * -0.12;
-    ship.add(wing);
-
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.55), glowMat);
-    tip.position.set(side * 1.48, -0.02, 0.12);
-    ship.add(tip);
-
-    const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.22, 0.65, 12), glowMat);
-    engine.rotation.x = Math.PI / 2;
-    engine.position.set(side * 0.38, -0.08, 1.45);
-    ship.add(engine);
+function makeChart(){
+ notes=[];
+ for(let beat=0;beat<TOTAL_BEATS;beat++){
+  const mode=(Math.floor(beat/16)%2===0)?'LANES':'AIM';
+  const time=COUNT_IN+beat*BEAT;
+  if(mode==='LANES'){
+   if(beat%4!==3 || beat%8===7){
+    notes.push({mode,time,lane:lanePattern[beat%lanePattern.length],judged:false});
+   }
+  }else{
+   if(beat%4!==3 || beat%8===7){
+    const n=beat/4;
+    const points=[[.22,.28],[.72,.25],[.78,.68],[.28,.72],[.5,.42],[.18,.58],[.82,.45],[.52,.76]];
+    const p=points[n%points.length];
+    notes.push({mode,time,x:p[0],y:p[1],judged:false});
+   }
   }
-
-  const engineGlow = new THREE.PointLight(0x27cfff, 3, 9);
-  engineGlow.position.set(0, 0, 1.7);
-  ship.add(engineGlow);
-  return ship;
+ }
 }
 
-const ship = makeShip();
-scene.add(ship);
-
-// Starfield
-const starPositions = new Float32Array(1800 * 3);
-for (let i = 0; i < 1800; i++) {
-  starPositions[i * 3] = (Math.random() - 0.5) * 300;
-  starPositions[i * 3 + 1] = (Math.random() - 0.5) * 180;
-  starPositions[i * 3 + 2] = -Math.random() * 500 + 30;
+function startAudio(){
+ const AudioCtx=window.AudioContext||window.webkitAudioContext;
+ if(!AudioCtx)return;
+ if(!audio)audio=new AudioCtx();
+ if(audio.state==='suspended')audio.resume();
 }
-const starGeometry = new THREE.BufferGeometry();
-starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({
-  color: 0xb5e5ff, size: 0.5, sizeAttenuation: true
-}));
-scene.add(stars);
-
-// Continuous procedural alien terrain. The height function uses world coordinates,
-// so adjacent terrain sections line up perfectly when they recycle.
-const TERRAIN_WIDTH = 260;
-const TERRAIN_LENGTH = 180;
-const TERRAIN_SEGMENTS = 72;
-const TERRAIN_BASE = -2.5;
-
-function terrainHeight(x, z) {
-  const broad = Math.sin(x * 0.025 + z * 0.009) * 3.1;
-  const rolling = Math.sin(x * 0.061 - z * 0.018) * 1.15;
-  const ridge = Math.pow(Math.max(0, Math.sin(x * 0.018 + z * 0.014)), 3) * 8;
-  const detail = Math.sin(x * 0.13 + z * 0.07) * 0.28
-    + Math.cos(x * 0.09 - z * 0.11) * 0.22;
-  const valley = Math.sin(z * 0.012) * 1.2;
-  return TERRAIN_BASE + broad + rolling + ridge + detail + valley;
+function tone(freq,duration,type,volume,when){
+ if(!audio)return;
+ const osc=audio.createOscillator();
+ const gain=audio.createGain();
+ osc.type=type;osc.frequency.setValueAtTime(freq,when);
+ gain.gain.setValueAtTime(volume,when);
+ gain.gain.exponentialRampToValueAtTime(.001,when+duration);
+ osc.connect(gain);gain.connect(audio.destination);
+ osc.start(when);osc.stop(when+duration);
+}
+function beatSound(beat){
+ if(!audio)return;
+ const now=audio.currentTime;
+ if(beat%4===0)tone(75,.13,'sine',.12,now);
+ tone(beat%2===0?660:440,.045,'triangle',.025,now+.015);
 }
 
-function updateTerrainGeometry(terrain, centerZ) {
-  const geometry = terrain.geometry;
-  const positions = geometry.attributes.position;
-  const colors = [];
-  const color = new THREE.Color();
+function begin(){
+ startAudio();
+ makeChart();
+ score=0;combo=0;maxCombo=0;hits=0;judged=0;totalError=0;elapsed=-COUNT_IN;lastBeat=-1;
+ startedAt=performance.now();
+ running=true;
+ startScreen.classList.add('hidden');
+ resultsScreen.classList.add('hidden');
+ document.querySelector('.live-dot').classList.add('active');
+ feedbackEl.textContent='';hintEl.textContent='FOLLOW THE BEAT';
+ updateHud();
+}
+document.querySelector('#start-button').addEventListener('click',begin);
+document.querySelector('#restart-button').addEventListener('click',begin);
 
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i);
-    const localZ = positions.getZ(i);
-    const height = terrainHeight(x, centerZ + localZ);
-    positions.setY(i, height - TERRAIN_BASE);
-
-    const shade = THREE.MathUtils.clamp((height + 13) / 20, 0, 1);
-    color.setRGB(0.19 + shade * 0.18, 0.22 + shade * 0.12, 0.29 + shade * 0.08);
-    colors.push(color.r, color.g, color.b);
-  }
-
-  positions.needsUpdate = true;
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geometry.computeVertexNormals();
+function currentMode(){
+ const beat=Math.max(0,Math.floor(elapsed/BEAT));
+ return Math.floor(beat/16)%2===0?'LANES':'AIM';
+}
+function updateHud(){
+ scoreEl.textContent=String(score).padStart(6,'0');
+ comboEl.textContent=String(combo);
+ const acc=judged?Math.max(0,100*(1-totalError/judged/0.17)):100;
+ accuracyEl.textContent=acc.toFixed(1)+'%';
+}
+function judge(note,delta){
+ if(note.judged)return;
+ note.judged=true;judged++;hits++;
+ const error=Math.abs(delta);
+ let label,points;
+ if(error<.055){label='PERFECT';points=1000;totalError+=error*.35;}
+ else if(error<.105){label='GREAT';points=700;totalError+=error*.65;}
+ else{label='GOOD';points=400;totalError+=error;}
+ combo++;maxCombo=Math.max(maxCombo,combo);
+ score+=points+Math.min(combo,100)*5;
+ feedbackEl.textContent=label;
+ feedbackUntil=performance.now()+430;
+ updateHud();
+}
+function miss(note){
+ if(note.judged)return;
+ note.judged=true;judged++;combo=0;totalError+=.17;
+ feedbackEl.textContent='MISS';feedbackUntil=performance.now()+430;
+ updateHud();
 }
 
-function makeTerrainChunk(centerZ) {
-  const geometry = new THREE.PlaneGeometry(
-    TERRAIN_WIDTH, TERRAIN_LENGTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS
-  );
-  geometry.rotateX(-Math.PI / 2);
-
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 1,
-    metalness: 0,
-    side: THREE.DoubleSide
-  });
-
-  const terrain = new THREE.Mesh(geometry, material);
-  terrain.position.set(0, TERRAIN_BASE, centerZ);
-  terrain.frustumCulled = false;
-  updateTerrainGeometry(terrain, centerZ);
-  scene.add(terrain);
-  return terrain;
+function laneHit(lane){
+ if(!running||currentMode()!=='LANES')return;
+ let best=null,bestDelta=Infinity;
+ for(const note of notes){
+  if(note.mode!=='LANES'||note.judged||note.lane!==lane)continue;
+  const delta=note.time-elapsed;
+  if(Math.abs(delta)<bestDelta){best=note;bestDelta=Math.abs(delta);}
+ }
+ if(best&&bestDelta<=HIT_WINDOW)judge(best,elapsed-best.time);
 }
-
-const terrainChunks = [
-  makeTerrainChunk(-100),
-  makeTerrainChunk(-280),
-  makeTerrainChunk(-460)
-];
-
-// Decorative distant mountain silhouettes
-function makeMountainRange() {
-  const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x202d46, roughness: 1, flatShading: true
-  });
-  for (let i = 0; i < 32; i++) {
-    const height = 12 + Math.random() * 25;
-    const width = 12 + Math.random() * 20;
-    const mountain = new THREE.Mesh(
-      new THREE.ConeGeometry(width, height, 5),
-      material
-    );
-    mountain.position.set(
-      -145 + i * 9.3,
-      -3 + height * 0.45,
-      -390 - Math.random() * 35
-    );
-    mountain.rotation.y = Math.random() * Math.PI;
-    group.add(mountain);
-  }
-  scene.add(group);
+function aimHit(event){
+ if(!running||currentMode()!=='AIM')return;
+ const rect=canvas.getBoundingClientRect();
+ const x=event.clientX-rect.left,y=event.clientY-rect.top;
+ const w=rect.width,h=rect.height;
+ let best=null,bestDist=Infinity;
+ for(const note of notes){
+  if(note.mode!=='AIM'||note.judged)continue;
+  const dt=note.time-elapsed;
+  if(Math.abs(dt)>HIT_WINDOW)continue;
+  const nx=note.x*w,ny=note.y*h;
+  const d=Math.hypot(x-nx,y-ny);
+  if(d<bestDist){best=note;bestDist=d;}
+ }
+ if(best&&bestDist<Math.min(w,h)*.09)judge(best,elapsed-best.time);
 }
-makeMountainRange();
+const keyToLane={d:0,f:1,j:2,k:3};
+window.addEventListener('keydown',event=>{
+ const key=event.key.toLowerCase();
+ if(keyToLane[key]!==undefined){event.preventDefault();laneHit(keyToLane[key]);}
+});
+canvas.addEventListener('pointerdown',aimHit);
 
-const clock = new THREE.Clock();
-const target = new THREE.Vector2();
-const pointer = new THREE.Vector2();
-let running = false;
-let elapsed = 0;
-let distance = 0;
-let speed = 62;
-
-function updatePointer(clientX, clientY) {
-  pointer.x = (clientX / innerWidth - 0.5) * 2;
-  pointer.y = (clientY / innerHeight - 0.5) * 2;
-  pointer.x = THREE.MathUtils.clamp(pointer.x, -1, 1);
-  pointer.y = THREE.MathUtils.clamp(pointer.y, -1, 1);
+function drawBackground(w,h){
+ ctx.fillStyle='#ecece7';ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='#deded7';ctx.lineWidth=1;
+ for(let x=0;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+ for(let y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
 }
-
-window.addEventListener('pointermove', event => {
-  updatePointer(event.clientX, event.clientY);
-}, { passive: true });
-
-function resetGame() {
-  elapsed = 0;
-  distance = 0;
-  speed = 62;
-  ship.position.set(0, 0, 0);
-  ship.rotation.set(0, 0, 0);
-  target.set(0, 0);
-  pointer.set(0, 0);
-  camera.position.set(0, 5.5, 11);
-  distanceLabel.textContent = '0';
-  speedLabel.textContent = String(speed);
-  gameOverScreen.classList.add('hidden');
-  startScreen.classList.add('hidden');
-  running = true;
+function drawLanes(w,h){
+ const left=w*.12,right=w*.88,laneW=(right-left)/4,hitY=h*.82;
+ ctx.fillStyle='#e4e4de';ctx.fillRect(left,0,right-left,h);
+ for(let i=0;i<4;i++){
+  const x=left+i*laneW;
+  ctx.fillStyle=i%2===0?'#e9e9e3':'#e2e2dc';ctx.fillRect(x,0,laneW,h);
+  ctx.strokeStyle='#d1d2ca';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+  ctx.fillStyle='#777970';ctx.font='11px monospace';ctx.textAlign='center';ctx.fillText(KEYS[i],x+laneW/2,h-15);
+ }
+ ctx.strokeStyle='#252722';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(left,hitY);ctx.lineTo(right,hitY);ctx.stroke();
+ ctx.fillStyle='#252722';ctx.font='10px monospace';ctx.textAlign='left';ctx.fillText('HIT',left-30,hitY+4);
+ for(const note of notes){
+  if(note.mode!=='LANES'||note.judged)continue;
+  const dt=note.time-elapsed;if(dt>APPROACH||dt<-.18)continue;
+  const x=left+note.lane*laneW+laneW/2;
+  const y=hitY-(dt/APPROACH)*(hitY+30);
+  const size=Math.min(25,laneW*.28);
+  ctx.fillStyle='#242620';ctx.fillRect(x-size/2,y-size/2,size,size);
+  ctx.fillStyle='#fff';ctx.fillRect(x-2,y-2,4,4);
+ }
 }
-
-document.querySelector('#start-button').addEventListener('click', resetGame);
-document.querySelector('#restart-button').addEventListener('click', resetGame);
-
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-
-  if (running) {
-    elapsed += dt;
-    speed = Math.min(62 + elapsed * 1.1, 112);
-    distance += speed * dt * 0.12;
-    speedLabel.textContent = String(Math.round(speed));
-    distanceLabel.textContent = Math.floor(distance).toLocaleString();
-
-    // The steering range adapts to the viewport's aspect ratio.
-    const aspect = innerWidth / innerHeight;
-    const horizontalLimit = THREE.MathUtils.clamp(8.5 * aspect, 5.5, 17);
-    const verticalLimit = THREE.MathUtils.clamp(5.2 / Math.max(0.65, aspect), 3.5, 7);
-    const desiredX = pointer.x * horizontalLimit;
-    const desiredY = -pointer.y * verticalLimit;
-
-    // Exponential smoothing behaves consistently at different frame rates.
-    const steeringEase = 1 - Math.exp(-5.5 * dt);
-    target.x += (desiredX - target.x) * steeringEase;
-    target.y += (desiredY - target.y) * steeringEase;
-    ship.position.x = target.x;
-    ship.position.y = target.y;
-
-    const tiltEase = 1 - Math.exp(-4 * dt);
-    ship.rotation.z += (-pointer.x * 0.42 - ship.rotation.z) * tiltEase;
-    ship.rotation.x += (pointer.y * 0.18 - ship.rotation.x) * tiltEase;
-
-    camera.position.x += (ship.position.x * 0.2 - camera.position.x) * tiltEase;
-    camera.position.y += (5.5 + ship.position.y * 0.12 - camera.position.y) * tiltEase;
-    camera.lookAt(ship.position.x * 0.22, -3.5 + ship.position.y * 0.12, -45);
-
-    // Move each terrain section toward the camera, then recycle it far ahead.
-    const terrainSpeed = speed * dt * 0.72;
-    for (const chunk of terrainChunks) {
-      chunk.position.z += terrainSpeed;
-      if (chunk.position.z > 80) {
-        chunk.position.z -= TERRAIN_LENGTH * (terrainChunks.length + 1);
-        updateTerrainGeometry(chunk, chunk.position.z);
-      }
-    }
-  }
-
-  const positions = starGeometry.attributes.position.array;
-  const starSpeed = running ? speed * 0.72 : 3;
-  for (let i = 0; i < positions.length; i += 3) {
-    positions[i + 2] += starSpeed * dt;
-    if (positions[i + 2] > 30) {
-      positions[i + 2] = -500;
-      positions[i] = (Math.random() - 0.5) * 300;
-      positions[i + 1] = (Math.random() - 0.5) * 180;
-    }
-  }
-  starGeometry.attributes.position.needsUpdate = true;
-
-  renderer.render(scene, camera);
+function drawAim(w,h){
+ ctx.fillStyle='#e4e4de';ctx.fillRect(w*.07,h*.06,w*.86,h*.82);
+ for(const note of notes){
+  if(note.mode!=='AIM'||note.judged)continue;
+  const dt=note.time-elapsed;if(dt>APPROACH||dt<-.18)continue;
+  const x=note.x*w,y=note.y*h;
+  const r=Math.min(w,h)*.045;
+  const shrink=r+(1-Math.max(0,dt)/APPROACH)*r*1.6;
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle='#252722';ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);ctx.strokeStyle='#b1b2a9';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,shrink,0,Math.PI*2);ctx.strokeStyle='#55584f';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('✳',x,y);
+ }
 }
-animate();
-
-function resizeGame() {
-  const width = mount.clientWidth || innerWidth;
-  const height = mount.clientHeight || innerHeight;
-  camera.aspect = width / height;
-  camera.fov = width < 600 ? 76 : 68;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, width < 600 ? 1.35 : 1.75));
+function render(){
+ const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;
+ drawBackground(w,h);
+ if(currentMode()==='LANES')drawLanes(w,h);else drawAim(w,h);
 }
-window.addEventListener('resize', resizeGame);
-window.addEventListener('orientationchange', () => setTimeout(resizeGame, 150));
-resizeGame();
+function finish(){
+ running=false;
+ document.querySelector('.live-dot').classList.remove('active');
+ const acc=judged?Math.max(0,100*(1-totalError/judged/.17)):0;
+ document.querySelector('#final-score').textContent=score.toLocaleString();
+ document.querySelector('#final-accuracy').textContent=acc.toFixed(1)+'%';
+ document.querySelector('#final-combo').textContent=maxCombo;
+ document.querySelector('#final-rating').textContent=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
+ resultsScreen.classList.remove('hidden');
+ hintEl.textContent='TRACK COMPLETE';
+}
+function frame(now){
+ requestAnimationFrame(frame);
+ if(!running){render();return;}
+ elapsed=(now-startedAt)/1000-COUNT_IN;
+ const beat=Math.floor(elapsed/BEAT);
+ if(beat>lastBeat&&elapsed>=0){
+  for(let b=Math.max(0,lastBeat+1);b<=Math.min(beat,TOTAL_BEATS-1);b++)beatSound(b);
+  lastBeat=beat;
+ }
+ const mode=currentMode();
+ modeLabel.textContent=mode==='LANES'?'MODE 01 / FOUR LANES':'MODE 02 / AIM CIRCLES';
+ hintEl.textContent=mode==='LANES'?'PRESS D   F   J   K':'CLICK OR TAP THE CIRCLES';
+ timeLabel.textContent='00:'+String(Math.max(0,Math.floor(elapsed))).padStart(2,'0');
+ progressEl.style.width=(Math.max(0,Math.min(1,elapsed/(TOTAL_BEATS*BEAT)))*100)+'%';
+ for(const note of notes){if(!note.judged&&elapsed>note.time+HIT_WINDOW)miss(note);}
+ if(performance.now()>feedbackUntil)feedbackEl.textContent='';
+ render();
+ if(elapsed>TOTAL_BEATS*BEAT+1)finish();
+}
+requestAnimationFrame(frame);
+window.addEventListener('blur',()=>{if(running)hintEl.textContent='KEEP THIS TAB ACTIVE';});
