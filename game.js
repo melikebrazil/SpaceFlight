@@ -55,7 +55,7 @@ function makeChart(){
    }
   }else{
    if(beat%4!==3 || beat%8===7){
-    const n=beat/4;
+    const n=beat-16;
     const points=[[.22,.28],[.72,.25],[.78,.68],[.28,.72],[.5,.42],[.18,.58],[.82,.45],[.52,.76]];
     const p=points[n%points.length];
     notes.push({mode,time,x:p[0],y:p[1],judged:false});
