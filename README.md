@@ -1,36 +1,23 @@
-# SpaceFlight
+# SpaceFlight / Rhythm
 
-yup, this is vibe-coded...
-
-A 3D spaceship survival-flight game built with JavaScript and Three.js.
+A minimal browser rhythm game built with HTML, CSS, and JavaScript.
 
 ## Play locally
-
 1. Download or clone this repository.
-2. Open the project folder in VS Code.
-3. Run it with a local web server (for example, the **Live Server** extension).
-4. Open the local URL shown by the server.
+2. Open the folder in VS Code.
+3. Run `index.html` with a local web server, such as the Live Server extension.
 
-> Three.js is loaded as an ES module, so opening `index.html` directly with a `file://` URL may not work. Use a local web server.
+## How to play
+The track alternates between two modes every 8 seconds:
+- **Four lanes:** press **D**, **F**, **J**, or **K** when a note reaches the hit line.
+- **Aim circles:** click or tap each circle when its shrinking ring reaches the target.
 
-## Controls
-
-- Move your mouse to steer the ship.
-- Avoid the asteroids.
-- Try to travel as far as possible.
+The game uses an original synthesized beat, so no music file is required. It runs for one 32-second track at 120 BPM.
 
 ## Files
-
-- `index.html` — game page and HUD
-- `style.css` — interface styling
-- `game.js` — Three.js scene, ship, asteroids, and gameplay
+- `index.html` — game layout and screens
+- `style.css` — minimal responsive styling
+- `game.js` — rhythm chart, timing, input, scoring, visuals, and generated audio
 
 ## Deploy with GitHub Pages
-
-1. Open the repository's **Settings** tab.
-2. Select **Pages** in the sidebar.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Select the `main` branch and `/(root)`, then save.
-5. Wait for GitHub Pages to publish the site. The Pages section will show the live URL.
-
-Three.js is loaded from jsDelivr, and the interface font is loaded from Google Fonts, so those services need to be reachable when playing.
+In the repository, open **Settings → Pages**, select **Deploy from a branch**, choose `main` and `/(root)`, then save. New commits to `main` publish automatically.
