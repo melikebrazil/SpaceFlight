@@ -3,63 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f4f4f1" />
-  <title>SpaceFlight — Rhythm</title>
+  <meta name="theme-color" content="#070b16" />
+  <title>SpaceFlight — Rhythm Run</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <main id="app">
     <header class="topbar">
-      <a class="wordmark" href="./">SPACEFLIGHT<span>/ RHYTHM</span></a>
+      <a class="wordmark" href="./">SPACEFLIGHT<span>/ RHYTHM RUN</span></a>
       <div class="top-stats">
         <div><small>SCORE</small><strong id="score">000000</strong></div>
         <div><small>COMBO</small><strong id="combo">0</strong></div>
-        <div><small>ACCURACY</small><strong id="accuracy">100.0%</strong></div>
+        <div><small>HULL</small><strong id="hull">100%</strong></div>
       </div>
     </header>
-
     <section class="game-shell">
       <div class="game-meta">
-        <div><span class="live-dot"></span><span id="mode-label">READY</span></div>
-        <div class="song-name">NEON CIRCUIT <span>·</span> 120 BPM</div>
+        <div><span class="live-dot"></span><span id="mode-label">SYSTEMS READY</span></div>
+        <div class="song-name">STARDRIVE <span>·</span> 120 BPM</div>
         <div id="time-label">00:00</div>
       </div>
-      <canvas id="game-canvas" aria-label="Rhythm game playfield"></canvas>
+      <div class="canvas-wrap">
+        <canvas id="game-canvas" aria-label="Steer your spaceship through rhythm targets and obstacles"></canvas>
+        <div class="crosshair" aria-hidden="true">+</div>
+        <div class="canvas-tip">MOVE MOUSE TO STEER</div>
+      </div>
       <div class="progress-track"><div id="progress"></div></div>
       <div class="feedback" id="feedback" aria-live="polite"></div>
     </section>
-
-    <div class="bottom-hint" id="bottom-hint">GET READY</div>
-
+    <div class="bottom-hint" id="bottom-hint">STEER INTO THE CYAN TARGETS ON THE BEAT · AVOID RED MINES</div>
     <section class="screen" id="start-screen">
       <div class="dialog">
-        <p class="eyebrow">A SPACEFLIGHT RHYTHM EXPERIMENT</p>
-        <h1>FIND YOUR<br /><span>RHYTHM.</span></h1>
-        <p class="intro">Two ways to play. The game switches between four-lane notes and aim circles as the track moves.</p>
-        <div class="mode-preview">
-          <div><b>01 / LANES</b><span>Press D · F · J · K</span></div>
-          <div><b>02 / AIM</b><span>Click or tap the circles</span></div>
+        <p class="eyebrow">SPACEFLIGHT // RHYTHM RUN</p>
+        <h1>RIDE THE<br /><span>STARDRIVE.</span></h1>
+        <p class="intro">Pilot your ship through a neon space tunnel. Ram cyan energy gates on the beat, dodge red mines, and keep your combo alive.</p>
+        <div class="instructions">
+          <div><b>STEER</b><span>Move your mouse anywhere in the flight window</span></div>
+          <div><b>RAM</b><span>Line up with cyan targets as they reach your ship</span></div>
+          <div><b>DODGE</b><span>Stay clear of red mines</span></div>
         </div>
-        <button id="start-button">START TRACK <span>↗</span></button>
-        <p class="tiny-note">USE HEADPHONES · BEST ON DESKTOP</p>
+        <button id="start-button">LAUNCH FLIGHT <span>↗</span></button>
+        <p class="tiny-note">BEST WITH SOUND · DESKTOP RECOMMENDED</p>
       </div>
     </section>
-
     <section class="screen hidden" id="results-screen">
       <div class="dialog results">
-        <p class="eyebrow">TRACK COMPLETE</p>
-        <h1>GOOD<br /><span>RUN.</span></h1>
+        <p class="eyebrow">FLIGHT COMPLETE</p>
+        <h1>MISSION<br /><span>LOG.</span></h1>
         <div class="result-grid">
           <div><small>FINAL SCORE</small><strong id="final-score">0</strong></div>
-          <div><small>ACCURACY</small><strong id="final-accuracy">0%</strong></div>
+          <div><small>GATES HIT</small><strong id="final-hits">0</strong></div>
           <div><small>MAX COMBO</small><strong id="final-combo">0</strong></div>
-          <div><small>RATING</small><strong id="final-rating">—</strong></div>
+          <div><small>HULL LEFT</small><strong id="final-hull">100%</strong></div>
         </div>
-        <button id="restart-button">PLAY AGAIN <span>↗</span></button>
+        <button id="restart-button">FLY AGAIN <span>↗</span></button>
       </div>
     </section>
   </main>
-  <script type="module" src="./game.js"></script>
+  <script src="./game.js"></script>
 </body>
 </html>
