@@ -8,9 +8,10 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #game { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { background: #050816; }
-canvas { display: block; width: 100%; height: 100%; }
+html, body, #game { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; }
+body { background: #050816; overscroll-behavior: none; }
+#game { position: fixed; inset: 0; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
 .hud {
   position: fixed; z-index: 2; top: 0; left: 0; width: 100%;
@@ -37,36 +38,61 @@ canvas { display: block; width: 100%; height: 100%; }
 .reticle i { width: 4px; height: 4px; border-radius: 50%; }
 .reticle b { width: 1px; height: 48px; opacity: .4; }
 .hint {
-  position: fixed; z-index: 2; bottom: 28px; left: 50%; transform: translateX(-50%);
-  color: #91abc1; font: 500 10px 'Orbitron', sans-serif; letter-spacing: 2.5px;
-  pointer-events: none;
+  position: fixed; z-index: 2; bottom: max(28px, env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%); color: #91abc1;
+  font: 500 10px 'Orbitron', sans-serif; letter-spacing: 2.5px;
+  pointer-events: none; white-space: nowrap;
 }
 
 .screen {
   position: fixed; z-index: 5; inset: 0; display: grid; place-items: center;
-  background: radial-gradient(ellipse at center, #07172bd9 0%, #050816eF 68%);
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse at center, #07172bd9 0%, #050816ef 68%);
   transition: opacity .35s ease;
 }
 .screen.hidden { opacity: 0; pointer-events: none; }
-.panel { width: min(520px, calc(100% - 48px)); padding: 42px; border: 1px solid #4bcfff38; background: #071426b8; box-shadow: 0 0 70px #00bfff12; backdrop-filter: blur(14px); }
+.panel {
+  width: min(520px, 100%); max-height: 100%; overflow-y: auto;
+  padding: clamp(24px, 5vw, 42px); border: 1px solid #4bcfff38;
+  background: #071426b8; box-shadow: 0 0 70px #00bfff12; backdrop-filter: blur(14px);
+}
 .eyebrow { color: #42dfff; font: 600 10px 'Orbitron', sans-serif; letter-spacing: 3px; }
-h1 { margin: 22px 0 16px; font: 800 clamp(42px, 8vw, 68px)/.98 'Orbitron', sans-serif; letter-spacing: -3px; }
+h1 { margin: 22px 0 16px; font: 800 clamp(38px, 8vw, 68px)/.98 'Orbitron', sans-serif; letter-spacing: -3px; }
 h1 span { color: #3edaff; text-shadow: 0 0 25px #28cfff55; }
 .description { max-width: 390px; color: #9eb3c8; font-size: 18px; line-height: 1.4; }
 button {
-  width: 100%; margin-top: 22px; padding: 17px 20px; border: 0; cursor: pointer;
-  color: #03101b; background: #45dcff; font: 700 13px 'Orbitron', sans-serif;
-  letter-spacing: 2px; transition: transform .2s, box-shadow .2s;
+  width: 100%; min-height: 52px; margin-top: 22px; padding: 17px 20px; border: 0;
+  cursor: pointer; color: #03101b; background: #45dcff;
+  font: 700 13px 'Orbitron', sans-serif; letter-spacing: 2px;
+  transition: transform .2s, box-shadow .2s;
 }
 button:hover { transform: translateY(-2px); box-shadow: 0 8px 28px #25cfff55; }
+button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
 button span { float: right; font-size: 18px; line-height: 12px; }
 .control-note { margin: 22px 0 0; color: #718ba3; font: 500 9px 'Orbitron', sans-serif; letter-spacing: 1.5px; text-align: center; }
 .control-note b { color: #3edaff; padding: 0 8px; }
 
 @media (max-width: 600px) {
-  .hud { padding: 20px; }
-  .brand { font-size: 13px; }
-  .stats { gap: 15px; }
-  .stat strong { font-size: 20px; }
-  .panel { padding: 28px; }
+  .hud { padding: max(16px, env(safe-area-inset-top)) 16px 16px; }
+  .brand { font-size: 12px; letter-spacing: 1.5px; }
+  .brand span { margin-left: 4px; }
+  .stats { gap: 13px; }
+  .stat { column-gap: 5px; }
+  .stat-label { font-size: 8px; letter-spacing: 1px; }
+  .stat strong { font-size: 18px; }
+  .stat small { font-size: 9px; }
+  .reticle { width: 27px; height: 27px; }
+  .reticle b { height: 38px; }
+  .hint { bottom: max(18px, env(safe-area-inset-bottom)); font-size: 8px; letter-spacing: 1.5px; }
+  .description { font-size: 16px; }
+  .control-note { font-size: 8px; letter-spacing: 1px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .hud { padding: 12px 20px; }
+  .panel { padding: 18px 26px; }
+  h1 { margin: 12px 0; font-size: clamp(30px, 6vh, 44px); }
+  .description { margin: 8px 0; font-size: 14px; }
+  button { margin-top: 10px; min-height: 42px; padding: 11px 16px; }
+  .control-note { margin-top: 10px; }
 }
