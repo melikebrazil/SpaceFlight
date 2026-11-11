@@ -1,98 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-:root {
-  color-scheme: dark;
-  font-family: 'Rajdhani', sans-serif;
-  background: #050816;
-  color: #eef7ff;
+:root{font-family:'Space Grotesk',sans-serif;color:#171817;background:#f4f4f1;color-scheme:light;font-synthesis:none}
+*{box-sizing:border-box}
+html,body,#app{width:100%;height:100%;height:100dvh;margin:0;overflow:hidden}
+body{background:#f4f4f1}
+#app{max-width:1600px;margin:auto;padding:0 4.5vw;display:flex;flex-direction:column}
+.topbar{height:88px;flex:none;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d9d9d3}
+.wordmark{font-size:14px;font-weight:700;letter-spacing:2px;color:#171817;text-decoration:none}
+.wordmark span{font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:#777970;margin-left:8px;letter-spacing:1px}
+.top-stats{display:flex;gap:clamp(18px,4vw,64px)}
+.top-stats div{display:flex;flex-direction:column;gap:3px;min-width:62px}
+small,.eyebrow,.game-meta,.bottom-hint,.tiny-note,.mode-preview b{font-family:'DM Mono',monospace;letter-spacing:1px}
+.top-stats small{font-size:9px;color:#8a8b83}
+.top-stats strong{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.game-shell{width:min(100%,900px);margin:auto;position:relative}
+.game-meta{display:flex;align-items:center;justify-content:space-between;height:42px;font-size:10px;color:#7a7c74}
+.game-meta>div:first-child{display:flex;align-items:center;gap:9px;color:#242622}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#9c9e95}
+.live-dot.active{background:#6a9d75;box-shadow:0 0 0 4px #6a9d751c}
+.song-name{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap}
+.song-name span{padding:0 6px;color:#b5b6ae}
+#game-canvas{display:block;width:100%;height:min(65vh,590px);min-height:300px;background:#ecece7;border:1px solid #deded7;touch-action:manipulation;cursor:crosshair}
+.progress-track{height:3px;background:#deded7}
+#progress{height:100%;width:0;background:#252722;transition:width .08s linear}
+.feedback{height:34px;display:grid;place-items:center;font-size:12px;font-weight:700;letter-spacing:2px;color:#45473f}
+.bottom-hint{text-align:center;flex:none;height:52px;color:#9a9b93;font-size:9px;padding-top:10px}
+.screen{position:fixed;z-index:5;inset:0;display:grid;place-items:center;padding:20px;background:#f4f4f1ed;backdrop-filter:blur(8px);transition:opacity .25s}
+.screen.hidden{opacity:0;pointer-events:none}
+.dialog{width:min(490px,100%);padding:clamp(26px,5vw,48px);background:#f8f8f5;border:1px solid #d9d9d3;box-shadow:0 24px 90px #22222212}
+.eyebrow{font-size:9px;color:#85877e}
+h1{font-size:clamp(48px,9vw,76px);line-height:.88;letter-spacing:-5px;margin:30px 0 20px;font-weight:700}
+h1 span{color:#898b82}
+.intro{max-width:370px;color:#707269;font-size:15px;line-height:1.6}
+.mode-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:26px 0 4px}
+.mode-preview div{padding:14px;border:1px solid #deded7;display:flex;flex-direction:column;gap:8px}
+.mode-preview b{font-size:9px}
+.mode-preview span{font-size:11px;color:#777970}
+button{width:100%;height:54px;margin-top:22px;padding:0 18px;border:0;background:#20221e;color:white;font:600 11px 'DM Mono',monospace;letter-spacing:1.5px;cursor:pointer;text-align:left}
+button span{float:right;font-size:18px}
+button:hover{background:#44473f}
+button:focus-visible{outline:2px solid #6a9d75;outline-offset:3px}
+.tiny-note{font-size:8px;color:#a0a198;text-align:center;margin:17px 0 0}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:30px 0}
+.result-grid div{display:flex;flex-direction:column;gap:5px}
+.result-grid small{font-size:9px;color:#8a8b83}
+.result-grid strong{font-size:23px}
+@media(max-width:600px){
+ #app{padding:0 16px}.topbar{height:70px}.wordmark{font-size:11px;letter-spacing:1px}.wordmark span{font-size:8px;margin-left:4px}
+ .top-stats{gap:12px}.top-stats div{min-width:48px}.top-stats small{font-size:7px}.top-stats strong{font-size:15px}
+ .game-shell{width:100%}#game-canvas{height:min(66vh,560px);min-height:280px}
+ .game-meta{font-size:8px}.song-name{font-size:8px}.feedback{height:30px}
+ h1{letter-spacing:-3px}.intro{font-size:13px}.mode-preview{gap:6px}.mode-preview div{padding:10px}.mode-preview span{font-size:9px}
 }
-
-* { box-sizing: border-box; }
-html, body, #game { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; }
-body { background: #050816; overscroll-behavior: none; }
-#game { position: fixed; inset: 0; }
-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-
-.hud {
-  position: fixed; z-index: 2; top: 0; left: 0; width: 100%;
-  padding: 28px 42px; display: flex; align-items: flex-start; justify-content: space-between;
-  pointer-events: none;
-}
-.brand {
-  font: 700 18px 'Orbitron', sans-serif; letter-spacing: 3px;
-  text-shadow: 0 0 18px #38cfff66;
-}
-.brand span { color: #35d8ff; margin-left: 7px; }
-.stats { display: flex; gap: 34px; }
-.stat { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: baseline; text-align: right; }
-.stat-label { grid-column: 1 / -1; color: #7f9bb7; font: 600 10px 'Orbitron', sans-serif; letter-spacing: 2px; }
-.stat strong { font: 600 27px 'Orbitron', sans-serif; color: #f1fbff; }
-.stat small { color: #46dfff; font-size: 11px; letter-spacing: 1px; }
-
-.reticle {
-  position: fixed; z-index: 2; left: 50%; top: 50%; width: 34px; height: 34px;
-  transform: translate(-50%, -50%); border: 1px solid #67dfff66; border-radius: 50%;
-  pointer-events: none; box-shadow: 0 0 18px #25cfff22;
-}
-.reticle i, .reticle b { position: absolute; background: #7ce8ff; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.reticle i { width: 4px; height: 4px; border-radius: 50%; }
-.reticle b { width: 1px; height: 48px; opacity: .4; }
-.hint {
-  position: fixed; z-index: 2; bottom: max(28px, env(safe-area-inset-bottom));
-  left: 50%; transform: translateX(-50%); color: #91abc1;
-  font: 500 10px 'Orbitron', sans-serif; letter-spacing: 2.5px;
-  pointer-events: none; white-space: nowrap;
-}
-
-.screen {
-  position: fixed; z-index: 5; inset: 0; display: grid; place-items: center;
-  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
-  background: radial-gradient(ellipse at center, #07172bd9 0%, #050816ef 68%);
-  transition: opacity .35s ease;
-}
-.screen.hidden { opacity: 0; pointer-events: none; }
-.panel {
-  width: min(520px, 100%); max-height: 100%; overflow-y: auto;
-  padding: clamp(24px, 5vw, 42px); border: 1px solid #4bcfff38;
-  background: #071426b8; box-shadow: 0 0 70px #00bfff12; backdrop-filter: blur(14px);
-}
-.eyebrow { color: #42dfff; font: 600 10px 'Orbitron', sans-serif; letter-spacing: 3px; }
-h1 { margin: 22px 0 16px; font: 800 clamp(38px, 8vw, 68px)/.98 'Orbitron', sans-serif; letter-spacing: -3px; }
-h1 span { color: #3edaff; text-shadow: 0 0 25px #28cfff55; }
-.description { max-width: 390px; color: #9eb3c8; font-size: 18px; line-height: 1.4; }
-button {
-  width: 100%; min-height: 52px; margin-top: 22px; padding: 17px 20px; border: 0;
-  cursor: pointer; color: #03101b; background: #45dcff;
-  font: 700 13px 'Orbitron', sans-serif; letter-spacing: 2px;
-  transition: transform .2s, box-shadow .2s;
-}
-button:hover { transform: translateY(-2px); box-shadow: 0 8px 28px #25cfff55; }
-button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
-button span { float: right; font-size: 18px; line-height: 12px; }
-.control-note { margin: 22px 0 0; color: #718ba3; font: 500 9px 'Orbitron', sans-serif; letter-spacing: 1.5px; text-align: center; }
-.control-note b { color: #3edaff; padding: 0 8px; }
-
-@media (max-width: 600px) {
-  .hud { padding: max(16px, env(safe-area-inset-top)) 16px 16px; }
-  .brand { font-size: 12px; letter-spacing: 1.5px; }
-  .brand span { margin-left: 4px; }
-  .stats { gap: 13px; }
-  .stat { column-gap: 5px; }
-  .stat-label { font-size: 8px; letter-spacing: 1px; }
-  .stat strong { font-size: 18px; }
-  .stat small { font-size: 9px; }
-  .reticle { width: 27px; height: 27px; }
-  .reticle b { height: 38px; }
-  .hint { bottom: max(18px, env(safe-area-inset-bottom)); font-size: 8px; letter-spacing: 1.5px; }
-  .description { font-size: 16px; }
-  .control-note { font-size: 8px; letter-spacing: 1px; }
-}
-
-@media (max-height: 520px) and (orientation: landscape) {
-  .hud { padding: 12px 20px; }
-  .panel { padding: 18px 26px; }
-  h1 { margin: 12px 0; font-size: clamp(30px, 6vh, 44px); }
-  .description { margin: 8px 0; font-size: 14px; }
-  button { margin-top: 10px; min-height: 42px; padding: 11px 16px; }
-  .control-note { margin-top: 10px; }
+@media(max-height:520px) and (orientation:landscape){
+ .topbar{height:54px}.game-meta{height:30px}#game-canvas{height:58vh;min-height:190px}.bottom-hint{height:30px}
+ .dialog{padding:20px 28px}h1{font-size:42px;margin:12px 0}.intro{font-size:12px;margin:8px 0}
+ .mode-preview{margin:12px 0 0}.mode-preview div{padding:8px}button{height:42px;margin-top:12px}
 }
