@@ -8,23 +8,27 @@ const gameOverScreen = document.querySelector('#game-over');
 const finalDistance = document.querySelector('#final-distance');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050816);
-scene.fog = new THREE.FogExp2(0x050816, 0.0032);
+scene.background = new THREE.Color(0x07101f);
+scene.fog = new THREE.FogExp2(0x07101f, 0.0028);
 
-const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 700);
-camera.position.set(0, 3.2, 10);
-camera.lookAt(0, 0, -25);
+const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 900);
+camera.position.set(0, 5.5, 11);
+camera.lookAt(0, -2, -35);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 mount.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0x9bdcff, 0x11152d, 1.5));
-const keyLight = new THREE.DirectionalLight(0x9beaff, 2.2);
-keyLight.position.set(-5, 8, 5);
-scene.add(keyLight);
+scene.add(new THREE.HemisphereLight(0xa5dfff, 0x292039, 1.8));
+const sun = new THREE.DirectionalLight(0xffd6a0, 2.4);
+sun.position.set(-35, 65, -80);
+scene.add(sun);
+
+const fillLight = new THREE.DirectionalLight(0x45aaff, 0.8);
+fillLight.position.set(30, 12, 20);
+scene.add(fillLight);
 
 function makeShip() {
   const ship = new THREE.Group();
@@ -68,80 +72,147 @@ function makeShip() {
 }
 
 const ship = makeShip();
-ship.position.set(0, 0, 0);
 scene.add(ship);
 
+// Starfield
 const starPositions = new Float32Array(1800 * 3);
 for (let i = 0; i < 1800; i++) {
-  starPositions[i * 3] = (Math.random() - 0.5) * 240;
-  starPositions[i * 3 + 1] = (Math.random() - 0.5) * 150;
-  starPositions[i * 3 + 2] = -Math.random() * 260 + 25;
+  starPositions[i * 3] = (Math.random() - 0.5) * 300;
+  starPositions[i * 3 + 1] = (Math.random() - 0.5) * 180;
+  starPositions[i * 3 + 2] = -Math.random() * 500 + 30;
 }
 const starGeometry = new THREE.BufferGeometry();
 starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0x9edfff, size: 0.48, sizeAttenuation: true }));
+const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({
+  color: 0xb5e5ff, size: 0.5, sizeAttenuation: true
+}));
 scene.add(stars);
 
-const asteroidGeometry = new THREE.IcosahedronGeometry(1, 1);
-const asteroidMaterials = [
-  new THREE.MeshStandardMaterial({ color: 0x596879, roughness: 1, flatShading: true }),
-  new THREE.MeshStandardMaterial({ color: 0x34465b, roughness: 1, flatShading: true })
+// Continuous procedural alien terrain. The height function uses world coordinates,
+// so adjacent terrain sections line up perfectly when they recycle.
+const TERRAIN_WIDTH = 260;
+const TERRAIN_LENGTH = 180;
+const TERRAIN_SEGMENTS = 72;
+const TERRAIN_BASE = -7.5;
+
+function terrainHeight(x, z) {
+  const broad = Math.sin(x * 0.025 + z * 0.009) * 3.1;
+  const rolling = Math.sin(x * 0.061 - z * 0.018) * 1.15;
+  const ridge = Math.pow(Math.max(0, Math.sin(x * 0.018 + z * 0.014)), 3) * 8;
+  const detail = Math.sin(x * 0.13 + z * 0.07) * 0.28
+    + Math.cos(x * 0.09 - z * 0.11) * 0.22;
+  const valley = Math.sin(z * 0.012) * 1.2;
+  return TERRAIN_BASE + broad + rolling + ridge + detail + valley;
+}
+
+function makeTerrainChunk(centerZ) {
+  const geometry = new THREE.PlaneGeometry(
+    TERRAIN_WIDTH, TERRAIN_LENGTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS
+  );
+  geometry.rotateX(-Math.PI / 2);
+
+  const positions = geometry.attributes.position;
+  const colors = [];
+  const color = new THREE.Color();
+
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const localZ = positions.getZ(i);
+    const worldZ = centerZ + localZ;
+    const height = terrainHeight(x, worldZ);
+    positions.setY(i, height - TERRAIN_BASE);
+
+    const shade = THREE.MathUtils.clamp((height + 13) / 20, 0, 1);
+    color.setRGB(
+      0.19 + shade * 0.18,
+      0.22 + shade * 0.12,
+      0.29 + shade * 0.08
+    );
+    colors.push(color.r, color.g, color.b);
+  }
+
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 1,
+    metalness: 0,
+    side: THREE.DoubleSide
+  });
+
+  const terrain = new THREE.Mesh(geometry, material);
+  terrain.position.set(0, TERRAIN_BASE, centerZ);
+  terrain.frustumCulled = false;
+  scene.add(terrain);
+  return terrain;
+}
+
+const terrainChunks = [
+  makeTerrainChunk(-100),
+  makeTerrainChunk(-280),
+  makeTerrainChunk(-460)
 ];
-const asteroids = [];
+
+// Decorative distant mountain silhouettes
+function makeMountainRange() {
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x202d46, roughness: 1, flatShading: true
+  });
+  for (let i = 0; i < 32; i++) {
+    const height = 12 + Math.random() * 25;
+    const width = 12 + Math.random() * 20;
+    const mountain = new THREE.Mesh(
+      new THREE.ConeGeometry(width, height, 5),
+      material
+    );
+    mountain.position.set(
+      -145 + i * 9.3,
+      -3 + height * 0.45,
+      -390 - Math.random() * 35
+    );
+    mountain.rotation.y = Math.random() * Math.PI;
+    group.add(mountain);
+  }
+  scene.add(group);
+}
+makeMountainRange();
+
 const clock = new THREE.Clock();
-const mouse = new THREE.Vector2();
 const target = new THREE.Vector2();
+const pointer = new THREE.Vector2();
 let running = false;
 let elapsed = 0;
 let distance = 0;
-let spawnTimer = 0;
 let speed = 62;
 
-function spawnAsteroid() {
-  const size = 1.1 + Math.random() * 2.1;
-  const rock = new THREE.Mesh(asteroidGeometry, asteroidMaterials[Math.floor(Math.random() * asteroidMaterials.length)]);
-  rock.scale.set(size * (0.8 + Math.random() * 0.5), size * (0.8 + Math.random() * 0.5), size);
-  rock.position.set((Math.random() - 0.5) * 34, (Math.random() - 0.5) * 20, -145);
-  rock.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-  rock.userData.spin = new THREE.Vector3(Math.random() * 0.8, Math.random() * 0.8, Math.random() * 0.8);
-  scene.add(rock);
-  asteroids.push(rock);
+function updatePointer(clientX, clientY) {
+  pointer.x = (clientX / innerWidth - 0.5) * 2;
+  pointer.y = (clientY / innerHeight - 0.5) * 2;
+  pointer.x = THREE.MathUtils.clamp(pointer.x, -1, 1);
+  pointer.y = THREE.MathUtils.clamp(pointer.y, -1, 1);
 }
 
-function clearAsteroids() {
-  for (const rock of asteroids) scene.remove(rock);
-  asteroids.length = 0;
-}
+window.addEventListener('pointermove', event => {
+  updatePointer(event.clientX, event.clientY);
+}, { passive: true });
 
 function resetGame() {
-  clearAsteroids();
   elapsed = 0;
   distance = 0;
-  spawnTimer = 0;
   speed = 62;
   ship.position.set(0, 0, 0);
   ship.rotation.set(0, 0, 0);
   target.set(0, 0);
+  pointer.set(0, 0);
+  camera.position.set(0, 5.5, 11);
   distanceLabel.textContent = '0';
   speedLabel.textContent = String(speed);
   gameOverScreen.classList.add('hidden');
   startScreen.classList.add('hidden');
   running = true;
 }
-
-function endGame() {
-  running = false;
-  finalDistance.textContent = Math.floor(distance).toLocaleString();
-  gameOverScreen.classList.remove('hidden');
-}
-
-function onPointerMove(event) {
-  target.x = (event.clientX / innerWidth - 0.5) * 2;
-  target.y = (event.clientY / innerHeight - 0.5) * 2;
-  target.x = THREE.MathUtils.clamp(target.x, -1, 1);
-  target.y = THREE.MathUtils.clamp(target.y, -1, 1);
-}
-window.addEventListener('pointermove', onPointerMove);
 
 document.querySelector('#start-button').addEventListener('click', resetGame);
 document.querySelector('#restart-button').addEventListener('click', resetGame);
@@ -152,53 +223,52 @@ function animate() {
 
   if (running) {
     elapsed += dt;
-    speed = Math.min(62 + elapsed * 1.3, 115);
+    speed = Math.min(62 + elapsed * 1.1, 112);
     distance += speed * dt * 0.12;
     speedLabel.textContent = String(Math.round(speed));
     distanceLabel.textContent = Math.floor(distance).toLocaleString();
 
-    ship.position.x += (target.x * 17 - ship.position.x) * Math.min(1, dt * 3.8);
-    ship.position.y += (-target.y * 9 - ship.position.y) * Math.min(1, dt * 3.8);
-    ship.rotation.z += (-target.x * 0.48 - ship.rotation.z) * Math.min(1, dt * 3);
-    ship.rotation.x += (target.y * 0.2 - ship.rotation.x) * Math.min(1, dt * 3);
+    // The steering range adapts to the viewport's aspect ratio.
+    const aspect = innerWidth / innerHeight;
+    const horizontalLimit = THREE.MathUtils.clamp(8.5 * aspect, 5.5, 17);
+    const verticalLimit = THREE.MathUtils.clamp(5.2 / Math.max(0.65, aspect), 3.5, 7);
+    const desiredX = pointer.x * horizontalLimit;
+    const desiredY = -pointer.y * verticalLimit;
 
-    camera.position.x += (ship.position.x * 0.22 - camera.position.x) * Math.min(1, dt * 2);
-    camera.position.y += (3.2 + ship.position.y * 0.12 - camera.position.y) * Math.min(1, dt * 2);
-    camera.lookAt(ship.position.x * 0.25, ship.position.y * 0.2, -25);
+    // Exponential smoothing behaves consistently at different frame rates.
+    const steeringEase = 1 - Math.exp(-5.5 * dt);
+    target.x += (desiredX - target.x) * steeringEase;
+    target.y += (desiredY - target.y) * steeringEase;
+    ship.position.x = target.x;
+    ship.position.y = target.y;
 
-    spawnTimer += dt;
-    if (spawnTimer > Math.max(0.42, 1.05 - elapsed * 0.008)) {
-      spawnAsteroid();
-      spawnTimer = 0;
-    }
+    const tiltEase = 1 - Math.exp(-4 * dt);
+    ship.rotation.z += (-pointer.x * 0.42 - ship.rotation.z) * tiltEase;
+    ship.rotation.x += (pointer.y * 0.18 - ship.rotation.x) * tiltEase;
 
-    for (let i = asteroids.length - 1; i >= 0; i--) {
-      const rock = asteroids[i];
-      rock.position.z += speed * dt * 0.72;
-      rock.rotation.x += rock.userData.spin.x * dt;
-      rock.rotation.y += rock.userData.spin.y * dt;
-      rock.rotation.z += rock.userData.spin.z * dt;
+    camera.position.x += (ship.position.x * 0.2 - camera.position.x) * tiltEase;
+    camera.position.y += (5.5 + ship.position.y * 0.12 - camera.position.y) * tiltEase;
+    camera.lookAt(ship.position.x * 0.22, -2 + ship.position.y * 0.12, -35);
 
-      const dx = rock.position.x - ship.position.x;
-      const dy = rock.position.y - ship.position.y;
-      const dz = rock.position.z - ship.position.z;
-      const hitRadius = Math.max(1.5, rock.scale.x * 0.65);
-      if (dx * dx + dy * dy + dz * dz < hitRadius * hitRadius) {
-        endGame();
-        break;
-      }
-      if (rock.position.z > 18) {
-        scene.remove(rock);
-        asteroids.splice(i, 1);
+    // Move each terrain section toward the camera, then recycle it far ahead.
+    const terrainSpeed = speed * dt * 0.72;
+    for (const chunk of terrainChunks) {
+      chunk.position.z += terrainSpeed;
+      if (chunk.position.z > 80) {
+        chunk.position.z -= TERRAIN_LENGTH * terrainChunks.length;
       }
     }
   }
 
   const positions = starGeometry.attributes.position.array;
-  const starSpeed = running ? speed * 0.9 : 5;
+  const starSpeed = running ? speed * 0.72 : 3;
   for (let i = 0; i < positions.length; i += 3) {
     positions[i + 2] += starSpeed * dt;
-    if (positions[i + 2] > 25) positions[i + 2] = -260;
+    if (positions[i + 2] > 30) {
+      positions[i + 2] = -500;
+      positions[i] = (Math.random() - 0.5) * 300;
+      positions[i + 1] = (Math.random() - 0.5) * 180;
+    }
   }
   starGeometry.attributes.position.needsUpdate = true;
 
@@ -206,9 +276,15 @@ function animate() {
 }
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
+function resizeGame() {
+  const width = mount.clientWidth || innerWidth;
+  const height = mount.clientHeight || innerHeight;
+  camera.aspect = width / height;
+  camera.fov = width < 600 ? 76 : 68;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-});
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, width < 600 ? 1.35 : 1.75));
+}
+window.addEventListener('resize', resizeGame);
+window.addEventListener('orientationchange', () => setTimeout(resizeGame, 150));
+resizeGame();
