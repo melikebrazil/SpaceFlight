@@ -1,59 +1,51 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
-:root{font-family:'Space Grotesk',sans-serif;color:#171817;background:#f4f4f1;color-scheme:light;font-synthesis:none}
+:root{font-family:'Space Grotesk',sans-serif;color:#edf5ff;background:#070b16;color-scheme:dark;font-synthesis:none}
 *{box-sizing:border-box}
 html,body,#app{width:100%;height:100%;height:100dvh;margin:0;overflow:hidden}
-body{background:#f4f4f1}
+body{background:#070b16}
 #app{max-width:1600px;margin:auto;padding:0 4.5vw;display:flex;flex-direction:column}
-.topbar{height:88px;flex:none;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d9d9d3}
-.wordmark{font-size:14px;font-weight:700;letter-spacing:2px;color:#171817;text-decoration:none}
-.wordmark span{font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:#777970;margin-left:8px;letter-spacing:1px}
+.topbar{height:78px;flex:none;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1c2a40}
+.wordmark{font-size:14px;font-weight:700;letter-spacing:2px;color:#edf5ff;text-decoration:none}
+.wordmark span{font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:#73859e;margin-left:9px;letter-spacing:1px}
 .top-stats{display:flex;gap:clamp(18px,4vw,64px)}
 .top-stats div{display:flex;flex-direction:column;gap:3px;min-width:62px}
-small,.eyebrow,.game-meta,.bottom-hint,.tiny-note,.mode-preview b{font-family:'DM Mono',monospace;letter-spacing:1px}
-.top-stats small{font-size:9px;color:#8a8b83}
+small,.eyebrow,.game-meta,.bottom-hint,.tiny-note,.instructions b,.canvas-tip{font-family:'DM Mono',monospace;letter-spacing:1px}
+.top-stats small{font-size:9px;color:#71839d}
 .top-stats strong{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
-.game-shell{width:min(100%,900px);margin:auto;position:relative}
-.game-meta{display:flex;align-items:center;justify-content:space-between;height:42px;font-size:10px;color:#7a7c74}
-.game-meta>div:first-child{display:flex;align-items:center;gap:9px;color:#242622}
-.live-dot{width:7px;height:7px;border-radius:50%;background:#9c9e95}
-.live-dot.active{background:#6a9d75;box-shadow:0 0 0 4px #6a9d751c}
+.game-shell{width:min(100%,1050px);margin:auto;position:relative}
+.game-meta{display:flex;align-items:center;justify-content:space-between;height:38px;font-size:10px;color:#71839d}
+.game-meta>div:first-child{display:flex;align-items:center;gap:9px;color:#c8d8ed}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#61738b}
+.live-dot.active{background:#5df5dc;box-shadow:0 0 12px #5df5dc}
 .song-name{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap}
-.song-name span{padding:0 6px;color:#b5b6ae}
-#game-canvas{display:block;width:100%;height:min(65vh,590px);min-height:300px;background:#ecece7;border:1px solid #deded7;touch-action:manipulation;cursor:crosshair}
-.progress-track{height:3px;background:#deded7}
-#progress{height:100%;width:0;background:#252722;transition:width .08s linear}
-.feedback{height:34px;display:grid;place-items:center;font-size:12px;font-weight:700;letter-spacing:2px;color:#45473f}
-.bottom-hint{text-align:center;flex:none;height:52px;color:#9a9b93;font-size:9px;padding-top:10px}
-.screen{position:fixed;z-index:5;inset:0;display:grid;place-items:center;padding:20px;background:#f4f4f1ed;backdrop-filter:blur(8px);transition:opacity .25s}
+.song-name span{padding:0 6px;color:#52647c}
+.canvas-wrap{position:relative;border:1px solid #1c3550;background:#050a14;overflow:hidden;box-shadow:0 18px 80px #0008}
+#game-canvas{display:block;width:100%;height:min(67vh,620px);min-height:310px;touch-action:none;cursor:none}
+.crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#8bb9d5;font:14px monospace;opacity:.25;pointer-events:none}
+.canvas-tip{position:absolute;bottom:12px;left:14px;font-size:8px;color:#64809d;pointer-events:none}
+.progress-track{height:3px;background:#14243a}
+#progress{height:100%;width:0;background:#5df5dc;box-shadow:0 0 10px #5df5dc;transition:width .08s linear}
+.feedback{height:32px;display:grid;place-items:center;font-size:12px;font-weight:700;letter-spacing:2px;color:#70f7e3}
+.bottom-hint{text-align:center;flex:none;height:46px;color:#60738e;font-size:9px;padding-top:10px}
+.screen{position:fixed;z-index:5;inset:0;display:grid;place-items:center;padding:20px;background:#050914dc;backdrop-filter:blur(10px);transition:opacity .25s}
 .screen.hidden{opacity:0;pointer-events:none}
-.dialog{width:min(490px,100%);padding:clamp(26px,5vw,48px);background:#f8f8f5;border:1px solid #d9d9d3;box-shadow:0 24px 90px #22222212}
-.eyebrow{font-size:9px;color:#85877e}
-h1{font-size:clamp(48px,9vw,76px);line-height:.88;letter-spacing:-5px;margin:30px 0 20px;font-weight:700}
-h1 span{color:#898b82}
-.intro{max-width:370px;color:#707269;font-size:15px;line-height:1.6}
-.mode-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:26px 0 4px}
-.mode-preview div{padding:14px;border:1px solid #deded7;display:flex;flex-direction:column;gap:8px}
-.mode-preview b{font-size:9px}
-.mode-preview span{font-size:11px;color:#777970}
-button{width:100%;height:54px;margin-top:22px;padding:0 18px;border:0;background:#20221e;color:white;font:600 11px 'DM Mono',monospace;letter-spacing:1.5px;cursor:pointer;text-align:left}
+.dialog{width:min(510px,100%);padding:clamp(26px,5vw,48px);background:#0b1423;border:1px solid #29405b;box-shadow:0 24px 90px #0009}
+.eyebrow{font-size:9px;color:#5df5dc}
+h1{font-size:clamp(46px,9vw,74px);line-height:.9;letter-spacing:-4px;margin:28px 0 20px;font-weight:700}
+h1 span{color:#5df5dc;text-shadow:0 0 28px #5df5dc35}
+.intro{max-width:390px;color:#9badc3;font-size:14px;line-height:1.65}
+.instructions{display:grid;gap:9px;margin:25px 0 4px}
+.instructions div{display:grid;grid-template-columns:70px 1fr;gap:12px;align-items:center;padding:10px 12px;border:1px solid #1d3048;background:#0d1a2b}
+.instructions b{font-size:9px;color:#5df5dc}
+.instructions span{font-size:11px;color:#a6b7ca}
+button{width:100%;height:54px;margin-top:22px;padding:0 18px;border:1px solid #5df5dc;background:#5df5dc;color:#07111d;font:700 11px 'DM Mono',monospace;letter-spacing:1.5px;cursor:pointer;text-align:left}
 button span{float:right;font-size:18px}
-button:hover{background:#44473f}
-button:focus-visible{outline:2px solid #6a9d75;outline-offset:3px}
-.tiny-note{font-size:8px;color:#a0a198;text-align:center;margin:17px 0 0}
+button:hover{background:#9efff0}
+button:focus-visible{outline:2px solid white;outline-offset:3px}
+.tiny-note{font-size:8px;color:#60738e;text-align:center;margin:17px 0 0}
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:30px 0}
 .result-grid div{display:flex;flex-direction:column;gap:5px}
-.result-grid small{font-size:9px;color:#8a8b83}
+.result-grid small{font-size:9px;color:#71839d}
 .result-grid strong{font-size:23px}
-@media(max-width:600px){
- #app{padding:0 16px}.topbar{height:70px}.wordmark{font-size:11px;letter-spacing:1px}.wordmark span{font-size:8px;margin-left:4px}
- .top-stats{gap:12px}.top-stats div{min-width:48px}.top-stats small{font-size:7px}.top-stats strong{font-size:15px}
- .game-shell{width:100%}#game-canvas{height:min(66vh,560px);min-height:280px}
- .game-meta{font-size:8px}.song-name{font-size:8px}.feedback{height:30px}
- h1{letter-spacing:-3px}.intro{font-size:13px}.mode-preview{gap:6px}.mode-preview div{padding:10px}.mode-preview span{font-size:9px}
-}
-@media(max-height:520px) and (orientation:landscape){
- .topbar{height:54px}.game-meta{height:30px}#game-canvas{height:58vh;min-height:190px}.bottom-hint{height:30px}
- .dialog{padding:20px 28px}h1{font-size:42px;margin:12px 0}.intro{font-size:12px;margin:8px 0}
- .mode-preview{margin:12px 0 0}.mode-preview div{padding:8px}button{height:42px;margin-top:12px}
-}
+@media(max-width:600px){#app{padding:0 12px}.topbar{height:66px}.wordmark{font-size:11px;letter-spacing:1px}.wordmark span{font-size:8px;margin-left:4px}.top-stats{gap:10px}.top-stats div{min-width:45px}.top-stats small{font-size:7px}.top-stats strong{font-size:15px}.game-shell{width:100%}#game-canvas{height:min(68vh,570px);min-height:280px}.game-meta{font-size:8px}.song-name{font-size:8px}.feedback{height:28px}.bottom-hint{font-size:7px}h1{letter-spacing:-3px}.intro{font-size:13px}.instructions span{font-size:10px}}
+@media(max-height:520px) and (orientation:landscape){.topbar{height:48px}.game-meta{height:27px}#game-canvas{height:58vh;min-height:180px}.bottom-hint{height:26px}.dialog{padding:18px 26px}h1{font-size:42px;margin:12px 0}.intro{font-size:11px;margin:8px 0}.instructions{gap:5px;margin:10px 0 0}.instructions div{padding:6px 10px}button{height:40px;margin-top:10px}}
