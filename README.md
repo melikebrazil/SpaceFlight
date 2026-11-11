@@ -1,5 +1,7 @@
 # SpaceFlight
 
+yup, this is vibe-coded...
+
 A 3D spaceship survival-flight game built with JavaScript and Three.js.
 
 ## Play locally
